@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+<h1> Play a Guessing Game</h1>
+
+<form method="post" action="/guess">
+    <input type="text" name="your-guess" placeholder="Select your guess between 1 - 50"><br>
+
+    <button>Submit</button>
+
+    </form>
+
+
+{% endblock content %}
