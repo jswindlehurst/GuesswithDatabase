@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, make_response
 from model import User, db
 import random
+import uuid
+import hashlib
 
 app = Flask(__name__)
 db.create_all()
@@ -8,54 +10,79 @@ db.create_all()
 
 @app.route("/")
 def index():
+    session_token = request.cookies.get("session_token")
+    if session_token:
+        user = db.query(User).filter_by(session_token=session_token).first()
+    else:
+        user = None
 
-
-    return render_template("index.html")
-
-@app.route("/guessing")
-def guessing():
-
-    return render_template("guessing.html")
-
+    return render_template("index.html", user=user)
 
 @app.route("/login", methods=["POST"])
 def login():
     name = request.form.get("user-name")
     email = request.form.get("user-email")
     secret_num = random.randint(1, 50)
+    password = request.form.get("user-password")
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-    user = User(name=name, email=email, secret_num=secret_num)
 
-    db.add(user)
-    db.commit()
+    user = db.query(User).filter_by(email=email).first()
 
-    response = make_response(redirect(url_for('index')))
-    response.set_cookie("secret_num", str(secret_num))
+    if not user:
+        user = User(name=name, email=email, secret_num=secret_num, password=hashed_password)
+        db.add(user)
+        db.commit()
 
-    return response
+    if hashed_password != user.password:
+        return "Wrong Password"
+    else:
+        session_token = str(uuid.uuid4())
+        user.session_token = session_token
+
+        db.add(user)
+        db.commit()
+
+        response = make_response(redirect(url_for('index')))
+        response.set_cookie("session_token", session_token, httponly=True, samesite='Strict')
+
+        return response
 
 
 @app.route("/guess", methods=["POST"])
 def guess():
 
-    secret_num = int(request.cookies.get("secret_num"))
     guess = int(request.form.get("your-guess"))
+    session_token = request.cookies.get("session_token")
+    user = db.query(User).filter_by(session_token=session_token).first()
 
     if not guess:
         return "Please choose a number between 1 - 50"
 
-    elif guess == secret_num:
-        return "Success.  You guessed correctly"
-    elif guess < secret_num:
-        return "Try a bigger number"
-    else:
-        return "Try a smaller number"
+    elif guess == user.secret_num:
+        message = "Success.  You guessed correctly"
+        user.secret_num = random.randint(1, 50)
 
-    response = make_response(render_template("results.html"))
-    return response
+        db.add(user)
+        db.commit()
+
+    elif guess < user.secret_num:
+        message = "Try a bigger number"
+    else:
+        message = "Try a smaller number"
+
+    return render_template("results.html", message=message)
+
+@app.route("/logout", methods=["GET", "POST"])
+def logout():
+
+    session_token = ""
+
+    response = make_response(redirect(url_for('index')))
+    response.set_cookie("session_token", session_token)
 
 
     return response
 
 if __name__ == '__main__':
-    app.run(port=5003)
+    app.run(port=5006)

@@ -1,26 +1,29 @@
 {% extends "base.html" %}
 
-
-
 {% block content %}
-
-
-<a href="/guessing">Make a Guess</a>
-
-
+<button><a href="/logout">Log Out</a></button>
+<br>
 <h1> Guessing with Database example</h1>
 
-
+{% if not user %}
 
 <form method="post" action="/login">
     <input type="text" name="user-name" placeholder="Enter your name"><br>
     <input type="email" name="user-email" placeholder="Enter your email address"><br>
+    <input type="password" name="user-password" placeholder="Enter your password"><br>
+    <button>Submit</button>
+
+    </form>
+
+{% else %}
+
+<form method="post" action="/guess">
+    <input type="text" name="your-guess" placeholder="Guess between 1 - 50"><br>
 
     <button>Submit</button>
 
     </form>
 
-
-
+{% endif %}
 
 {% endblock content %}
