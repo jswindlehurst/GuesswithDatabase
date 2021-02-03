@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Results Page{% endblock title %}
+{% block title %} Results {% endblock title %}
 
 {% block content %}
-<button><a href="/logout">Log Out</a></button><button><a href="/">Guess Again</a></button>
-<br>
-<h1> Guessing with Database example</h1>
-<br>
+
 
 {{message}}
+
+<br>
+<button><a href="/">Guess Again</a></button>
+
 
 {% endblock content %}

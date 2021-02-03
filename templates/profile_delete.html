@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+
+{% block title %} Delete Profile {% endblock title %}
+
+{% block content %}
+
+
+<h3> Delete Your Profile </h3>
+
+<form method="post">
+    <p> Hey, {{ user.name }} </p>
+    <p>Do you really want to delete your profile?</p>
+
+    <button>Yes, delete </button> or <a href="/profile">cancel</a>
+
+    </form>
+{% endblock content %}
