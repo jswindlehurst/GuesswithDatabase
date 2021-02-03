@@ -26,7 +26,6 @@ def login():
     password = request.form.get("user-password")
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-
     user = db.query(User).filter_by(email=email).first()
 
     if not user:
@@ -149,12 +148,64 @@ def all_users():
     users = db.query(User).all()
     return render_template("users.html", users=users)
 
+
 @app.route("/user/<user_id>", methods=["GET"])
 def user_details(user_id):
 
     user = db.query(User).get(int(user_id))
 
     return render_template("user_details.html", user=user)
+
+
+@app.route("/password/edit", methods=["GET", "POST"])
+def password_edit():
+
+    session_token = request.cookies.get("session_token")
+    user = db.query(User).filter_by(session_token=session_token).first()
+
+    if request.method == "GET":
+
+        if user:
+            return render_template("password_edit.html", user=user)
+        else:
+            return redirect(url_for("index"))
+
+    elif request.method == "POST":
+
+        current_password = request.form.get("current-password")
+        hashed_current_password = hashlib.sha256(current_password.encode()).hexdigest()
+
+        if hashed_current_password != user.password:
+            return "Wrong Current Password"
+        else:
+            return render_template("password_check.html")
+
+
+@app.route("/password/check", methods=["GET", "POST"])
+def password_check():
+    session_token = request.cookies.get("session_token")
+    user = db.query(User).filter_by(session_token=session_token).first()
+
+    # if request.method == "POST":
+
+    new_password = request.form.get("new-password")
+    new_password2 = request.form.get("new-password2")
+
+    if new_password != new_password2:
+        return "The Passwords Do Not Match"
+    else:
+
+        user.password = hashlib.sha256(new_password.encode()).hexdigest()
+        session_token = str(uuid.uuid4())
+        user.session_token = session_token
+
+        db.add(user)
+        db.commit()
+
+        response = make_response(redirect(url_for('profile')))
+        response.set_cookie("session_token", session_token, httponly=True, samesite='Strict')
+
+        return response
 
 
 if __name__ == '__main__':
