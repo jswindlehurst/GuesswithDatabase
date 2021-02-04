@@ -10,3 +10,4 @@ class User(db.Model):
     secret_num = db.Column(db.Integer, unique=False)
     password = db.Column(db.String, unique=False)
     session_token = db.Column(db.String, unique=False)
+    delete = db.Column(db.String, unique=False)

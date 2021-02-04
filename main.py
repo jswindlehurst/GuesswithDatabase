@@ -11,7 +11,8 @@ db.create_all()
 @app.route("/")
 def index():
     session_token = request.cookies.get("session_token")
-    if session_token:
+    user = db.query(User).filter_by(session_token=session_token).first()
+    if session_token and user.delete == "no":
         user = db.query(User).filter_by(session_token=session_token).first()
     else:
         user = None
@@ -25,17 +26,20 @@ def login():
     secret_num = random.randint(1, 50)
     password = request.form.get("user-password")
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    delete = "no"
 
     user = db.query(User).filter_by(email=email).first()
 
     if not user:
-        user = User(name=name, email=email, secret_num=secret_num, password=hashed_password)
+        user = User(name=name, email=email, secret_num=secret_num, password=hashed_password, delete=delete)
         db.add(user)
         db.commit()
 
     if hashed_password != user.password:
         return "Wrong Password"
-    else:
+
+    elif user.delete == "no":
+
         session_token = str(uuid.uuid4())
         user.session_token = session_token
 
@@ -46,6 +50,9 @@ def login():
         response.set_cookie("session_token", session_token, httponly=True, samesite='Strict')
 
         return response
+
+    else:
+        return redirect(url_for("logout"))
 
 
 @app.route("/guess", methods=["POST"])
@@ -72,6 +79,7 @@ def guess():
 
     return render_template("results.html", message=message)
 
+
 @app.route("/logout", methods=["GET", "POST"])
 def logout():
 
@@ -81,6 +89,7 @@ def logout():
     response.set_cookie("session_token", session_token)
 
     return response
+
 
 @app.route("/profile", methods=["GET"])
 def profile():
@@ -137,16 +146,19 @@ def profile_delete():
 
     elif request.method == "POST":
 
-        db.delete(user)
+        user.delete = "yes"
         db.commit()
 
-        return redirect(url_for("index"))
+        return redirect(url_for("logout"))
+
 
 @app.route("/users", methods=["GET"])
 def all_users():
 
-    users = db.query(User).all()
-    return render_template("users.html", users=users)
+    delete = "no"
+    valid_users = db.query(User).filter_by(delete=delete).all()
+
+    return render_template("users.html", users=valid_users)
 
 
 @app.route("/user/<user_id>", methods=["GET"])
