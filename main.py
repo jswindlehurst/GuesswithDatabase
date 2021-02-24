@@ -198,8 +198,6 @@ def password_check():
     session_token = request.cookies.get("session_token")
     user = db.query(User).filter_by(session_token=session_token).first()
 
-    # if request.method == "POST":
-
     new_password = request.form.get("new-password")
     new_password2 = request.form.get("new-password2")
 
